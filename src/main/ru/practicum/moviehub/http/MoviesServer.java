@@ -10,9 +10,10 @@ import java.util.concurrent.atomic.AtomicLong;
 public class MoviesServer {
     private final HttpServer server;
     public static final AtomicLong newId = new AtomicLong();
-    public MoviesServer(MoviesStore store, int PORT) {
+
+    public MoviesServer(MoviesStore store, int port) {
         try {
-            server = HttpServer.create(new InetSocketAddress(PORT), 0);
+            server = HttpServer.create(new InetSocketAddress(port), 0);
 
             server.createContext("/movies", new MoviesHandler(store));
 
@@ -31,7 +32,7 @@ public class MoviesServer {
         System.out.println("Сервер остановлен");
     }
 
-    public void CiearID() {
+    public void clearID() {
         newId.set(0);
     }
 }

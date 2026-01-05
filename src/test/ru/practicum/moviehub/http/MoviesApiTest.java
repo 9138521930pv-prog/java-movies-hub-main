@@ -44,7 +44,7 @@ public class MoviesApiTest {
     @BeforeEach
     void beforeEach() {
         store.clear();
-        server.CiearID();
+        server.clearID();
     }
 
     @AfterAll
