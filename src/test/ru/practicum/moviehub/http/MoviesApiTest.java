@@ -137,7 +137,7 @@ public class MoviesApiTest {
 
         Assertions.assertTrue(title.equals(body.title));
         Assertions.assertTrue(year == body.year);
-        Assertions.assertTrue( respId == 1);
+        Assertions.assertTrue(respId == 1);
         assertEquals(200, response.statusCode(), "GET /movies должен вернуть 200");
     }
 
