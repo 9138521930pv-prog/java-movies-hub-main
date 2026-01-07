@@ -2,10 +2,8 @@ package ru.practicum.moviehub.store;
 
 import ru.practicum.moviehub.model.Movie;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Optional;
 
 public class MoviesStore {
     private final HashMap<Integer, Movie> movies = new HashMap<>();
