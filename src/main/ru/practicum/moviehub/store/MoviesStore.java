@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Optional;
 
 public class MoviesStore {
-    HashMap<Integer, List<Movie>> movies = new HashMap<>();
+    private final HashMap<Integer, List<Movie>> movies = new HashMap<>();
     private int seq = 1;
 
     public List<Movie> getMoviesByYear(int year) {
