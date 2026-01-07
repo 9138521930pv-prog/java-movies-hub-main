@@ -31,8 +31,4 @@ public class MoviesServer {
         server.stop(0);
         System.out.println("Сервер остановлен");
     }
-
-    public void clearID() {
-        newId.set(0);
-    }
 }

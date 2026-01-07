@@ -1,9 +1,6 @@
 package ru.practicum.moviehub.http;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
+import com.google.gson.*;
 import org.junit.jupiter.api.*;
 import ru.practicum.moviehub.model.Movie;
 import ru.practicum.moviehub.model.MovieRequest;
@@ -24,13 +21,15 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class MoviesApiTest {
 
     private static final String srvAddress = "http://localhost:8080";
+    private final Gson gson = new Gson();
+
     private static MoviesServer server;
     private static HttpClient client;
     private static MoviesStore store = new MoviesStore();
-    private static Charset charset = StandardCharsets.UTF_8;
-    private static String contentType = "application/json; charset=UTF-8";
-    private static int filmYyear = 2025;
-    private static String filmName = "Новый фильм";
+    private static final Charset CHAR_SET = StandardCharsets.UTF_8;
+    private static final String CONTENT_TYPE = "application/json; charset=UTF-8";
+    private static final int FILE_YEAR = 2025;
+    private static final String FILE_NAME = "Новый фильм";
 
     @BeforeAll
     static void beforeAll() {
@@ -44,7 +43,6 @@ public class MoviesApiTest {
     @BeforeEach
     void beforeEach() {
         store.clear();
-        server.clearID();
     }
 
     @AfterAll
@@ -59,32 +57,32 @@ public class MoviesApiTest {
                 .GET()
                 .build();
         HttpResponse<String> resp =
-                client.send(req, HttpResponse.BodyHandlers.ofString(charset));
+                client.send(req, HttpResponse.BodyHandlers.ofString(CHAR_SET));
         String contentTypeHeaderValue =
                 resp.headers().firstValue("Content-Type").orElse("");
         String body = resp.body().trim();
         assertEquals(200, resp.statusCode(), "GET /movies должен вернуть 200");
-        assertEquals(contentType, contentTypeHeaderValue,
+        assertEquals(CONTENT_TYPE, contentTypeHeaderValue,
                 "Content-Type должен содержать формат данных и кодировку");
-        assertTrue(body.startsWith("[") && body.endsWith("]"),
-                "Ожидается JSON-массив");
-        assertEquals("[]", resp.body().trim());
+        JsonElement json = JsonParser.parseString(body);
+        assertTrue(json.isJsonArray(),"Ожидается JSON-массив");
+        JsonArray jArray = json.getAsJsonArray();
+        assertEquals(0, jArray.size(),"Ожидается пустой JSON-массив");
     }
 
     @Test
     void getMovies_afterMovieIsCreated_ReturnsMovieInArray() throws Exception {
-        Gson gson = new Gson();
-        MovieRequest body = new MovieRequest(filmName, filmYyear);
+        MovieRequest body = new MovieRequest(FILE_NAME, FILE_YEAR);
         String json = gson.toJson(body);
 
         HttpRequest postRequest = HttpRequest.newBuilder()
                 .uri(URI.create(srvAddress + "/movies"))
-                .header("Content-Type", contentType)
-                .POST(HttpRequest.BodyPublishers.ofString(json, charset))
+                .header("Content-Type", CONTENT_TYPE)
+                .POST(HttpRequest.BodyPublishers.ofString(json, CHAR_SET))
                 .build();
 
         HttpResponse<String> postResponse =
-                client.send(postRequest, HttpResponse.BodyHandlers.ofString(charset));
+                client.send(postRequest, HttpResponse.BodyHandlers.ofString(CHAR_SET));
 
         HttpRequest getRequest = HttpRequest.newBuilder()
                 .uri(URI.create(srvAddress + "/movies"))
@@ -104,33 +102,32 @@ public class MoviesApiTest {
     @Test
     void getMovieById_afterMovieIsCreated_thenReturnsMovieObject() throws Exception {
         Gson gson = new Gson();
-        MovieRequest body = new MovieRequest(filmName, filmYyear);
+        MovieRequest body = new MovieRequest(FILE_NAME, FILE_YEAR);
 
         String json = gson.toJson(body);
         HttpRequest postRequest = HttpRequest.newBuilder()
                 .uri(URI.create(srvAddress + "/movies"))
-                .header("Content-Type", contentType)
-                .POST(HttpRequest.BodyPublishers.ofString(json, charset))
+                .header("Content-Type", CONTENT_TYPE)
+                .POST(HttpRequest.BodyPublishers.ofString(json, CHAR_SET))
                 .build();
 
-        client.send(postRequest, HttpResponse.BodyHandlers.ofString(charset));
+        client.send(postRequest, HttpResponse.BodyHandlers.ofString(CHAR_SET));
 
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(srvAddress + "/movies/1"))
                 .GET()
                 .build();
         HttpResponse<String> response =
-                client.send(request, HttpResponse.BodyHandlers.ofString(charset));
+                client.send(request, HttpResponse.BodyHandlers.ofString(CHAR_SET));
 
         String contentTypeHeaderValue =
                 response.headers().firstValue("Content-Type").orElse("");
 
-        assertEquals(contentType, contentTypeHeaderValue,
+        assertEquals(CONTENT_TYPE, contentTypeHeaderValue,
                 "Content-Type должен содержать формат данных и кодировку");
 
         JsonElement jsonElement = JsonParser.parseString(response.body());
         JsonObject jsonObject = jsonElement.getAsJsonObject();
-
         String title = jsonObject.get("title").getAsString();
         int year = jsonObject.get("year").getAsInt();
         int respId = jsonObject.get("id").getAsInt();
@@ -144,24 +141,23 @@ public class MoviesApiTest {
     @Test
     void deleteMovieById_afterMovieIsCreated_thenReturns204() throws Exception {
         Gson gson = new Gson();
-        MovieRequest body = new MovieRequest(filmName, filmYyear);
+        MovieRequest body = new MovieRequest(FILE_NAME, FILE_YEAR);
 
         String json = gson.toJson(body);
         HttpRequest postRequest = HttpRequest.newBuilder()
                 .uri(URI.create(srvAddress + "/movies"))
-                .header("Content-Type", contentType)
-                .POST(HttpRequest.BodyPublishers.ofString(json, charset))
+                .header("Content-Type", CONTENT_TYPE)
+                .POST(HttpRequest.BodyPublishers.ofString(json, CHAR_SET))
                 .build();
         HttpResponse<String> response1 =
-        client.send(postRequest, HttpResponse.BodyHandlers.ofString(charset));
-
+                client.send(postRequest, HttpResponse.BodyHandlers.ofString(CHAR_SET));
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(srvAddress + "/movies/1"))
                 .DELETE()
                 .build();
 
         HttpResponse<String> response =
-                client.send(request, HttpResponse.BodyHandlers.ofString(charset));
+                client.send(request, HttpResponse.BodyHandlers.ofString(CHAR_SET));
 
         assertEquals(204, response.statusCode(), "DELETE /movies должен вернуть 204");
     }
@@ -169,29 +165,29 @@ public class MoviesApiTest {
     @Test
     void getFilteredByYear_thenReturnsMoviesWithThatYear() throws Exception {
         Gson gson = new Gson();
-        MovieRequest body = new MovieRequest(filmName, filmYyear);
+        MovieRequest body = new MovieRequest(FILE_NAME, FILE_YEAR);
 
         String json = gson.toJson(body);
         HttpRequest postRequest = HttpRequest.newBuilder()
                 .uri(URI.create(srvAddress + "/movies"))
-                .header("Content-Type", contentType)
-                .POST(HttpRequest.BodyPublishers.ofString(json, charset))
+                .header("Content-Type", CONTENT_TYPE)
+                .POST(HttpRequest.BodyPublishers.ofString(json, CHAR_SET))
                 .build();
-        client.send(postRequest, HttpResponse.BodyHandlers.ofString(charset));
+        client.send(postRequest, HttpResponse.BodyHandlers.ofString(CHAR_SET));
 
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(srvAddress + "/movies?year=" + filmYyear))
+                .uri(URI.create(srvAddress + "/movies?year=" + FILE_YEAR))
                 .GET()
                 .build();
         HttpResponse<String> response =
-                client.send(request, HttpResponse.BodyHandlers.ofString(charset));
+                client.send(request, HttpResponse.BodyHandlers.ofString(CHAR_SET));
         String contentTypeHeaderValue =
                 response.headers().firstValue("Content-Type").orElse("");
         JsonElement jsonElement = JsonParser.parseString(response.body());
         String moviesStr = jsonElement.getAsJsonArray().toString();
         List<Movie> moviesList = gson.fromJson(moviesStr, new ListOfMoviesTypeToken().getType());
 
-        assertEquals(contentType, contentTypeHeaderValue,
+        assertEquals(CONTENT_TYPE, contentTypeHeaderValue,
                 "Content-Type должен содержать формат данных и кодировку");
         assertEquals(200, response.statusCode(), "200");
         System.out.println("Список фильмов: ");

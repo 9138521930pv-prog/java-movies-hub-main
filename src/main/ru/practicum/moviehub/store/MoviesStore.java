@@ -9,9 +9,14 @@ import java.util.Optional;
 
 public class MoviesStore {
     HashMap<Integer, List<Movie>> movies = new HashMap<>();
+    private int seq = 1;
 
     public List<Movie> getMoviesByYear(int year) {
-        return movies.get(year);
+        return movies.values()
+                .stream()
+                .flatMap(List::stream)
+                .filter(movie -> movie.getYear() == year)
+                .toList();
     }
 
     public List<Movie> getAll() {
@@ -21,7 +26,9 @@ public class MoviesStore {
                 .toList();
     }
 
-    public void add(int year, Movie movie) {
+    public void add(Movie movie) {
+        movie.setId(seq++);
+        int year = movie.getYear();
         List<Movie> copyMovies = Optional
                 .ofNullable(movies.get(year))
                 .orElseGet(ArrayList::new);
@@ -31,6 +38,7 @@ public class MoviesStore {
 
     public void clear() {
         movies.clear();
+        seq = 1;
     }
 
     public void deleteById(int id) {
@@ -45,12 +53,13 @@ public class MoviesStore {
     }
 
     public Movie getMovieById(int id) {
-        for (Movie movie : getAll()) {
-            if (movie.getId() == id) {
-                return movie;
-            }
-        }
-        return null;
+        return movies.values()
+                .stream()
+                .flatMap(List::stream)
+                .filter(movie -> movie.getId() == id)
+                .findFirst()
+                .orElse(null);
     }
+
 
 }

@@ -1,6 +1,7 @@
 package ru.practicum.moviehub.http;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonSyntaxException;
 import com.sun.net.httpserver.HttpExchange;
 
 import java.io.IOException;
@@ -58,8 +59,23 @@ class MoviesHandler extends BaseHttpHandler {
             sendStatusResponse(ex, 415);
             return;
         }
+
         String body = new String(ex.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
-        MovieRequest req = gson.fromJson(body, MovieRequest.class);
+
+        if (body.isBlank()) {
+            sendJsonResponse(ex, 400,
+                    new ErrorResponse("Ошибка валидации", List.of("Тело запроса не может быть пустым")));
+            return;
+        }
+
+        MovieRequest req;
+        try {
+            req = gson.fromJson(body, MovieRequest.class);
+        } catch (JsonSyntaxException e) {
+            sendJsonResponse(ex, 400,
+                    new ErrorResponse("Ошибка валидации", List.of("Неверный формат JSON")));
+            return;
+        }
 
         List<String> errors = validate(req);
         if (!errors.isEmpty()) {
@@ -69,7 +85,7 @@ class MoviesHandler extends BaseHttpHandler {
         }
 
         Movie movie = new Movie(req.title, req.year);
-        store.add(movie.getYear(), movie);
+        store.add(movie);
         sendJsonResponse(ex, 201, gson.toJson(movie));
     }
 
@@ -95,45 +111,42 @@ class MoviesHandler extends BaseHttpHandler {
         try {
             movieId = Integer.parseInt(id);
         } catch (NumberFormatException e) {
-            sendJsonResponse(ex, 400, gson.toJson(
-                    new ErrorResponse("Ошибка валидации", List.of("ID фильма должен быть числом"))));
+            sendJsonResponse(ex, 400,
+                    new ErrorResponse("Ошибка валидации", List.of("ID фильма должен быть числом")));
             return;
         }
 
         Movie movie = store.getMovieById(movieId);
         if (movie == null) {
-            sendJsonResponse(ex, 404, gson.toJson(
-                    new ErrorResponse("Ошибка валидации", List.of("Фильм не найден"))));
+            sendJsonResponse(ex, 404, new ErrorResponse("Ошибка валидации", List.of("Фильм не найден")));
             return;
         }
-        sendJsonResponse(ex, 200, gson.toJson(movie));
+        sendJsonResponse(ex, 200, movie);
     }
 
     public void handleGetAll(HttpExchange ex) throws IOException {
-        String jsonString = gson.toJson(store.getAll());
-        sendJsonResponse(ex, 200, jsonString);
+        List<Movie> movies = store.getAll();
+        sendJsonResponse(ex, 200, movies);
     }
 
     public void handleDeleteById(HttpExchange ex, String id) throws IOException {
-
         int movieId;
-
         try {
             movieId = Integer.parseInt(id);
         } catch (NumberFormatException e) {
-            sendJsonResponse(ex, 400, gson.toJson(
-                    new ErrorResponse("Ошибка валидации", List.of("ID фильма должен быть числом"))));
+            sendJsonResponse(ex, 400,
+                    new ErrorResponse("Ошибка валидации", List.of("ID фильма должен быть числом")));
             return;
         }
 
         Movie movie = store.getMovieById(movieId);
         if (movie == null) {
-            sendJsonResponse(ex, 404, gson.toJson(
-                    new ErrorResponse("Ошибка валидации", List.of("Фильм не найден"))));
+            sendJsonResponse(ex, 404,
+                    new ErrorResponse("Ошибка валидации", List.of("Фильм не найден")));
             return;
         }
         store.deleteById(movieId);
-        sendStatusResponse(ex, 204);
+        sendNoContentResponse(ex);
     }
 
     public void handleFilter(HttpExchange ex, String year) throws IOException {
@@ -144,11 +157,10 @@ class MoviesHandler extends BaseHttpHandler {
             if (listMovies == null) {
                 listMovies = List.of();
             }
-
-            sendJsonResponse(ex, 200, gson.toJson(listMovies));
+            sendJsonResponse(ex, 200, listMovies);
         } catch (NumberFormatException e) {
-            sendJsonResponse(ex, 400, gson.toJson(
-                    new ErrorResponse("Ошибка валидации", List.of("Год фильма должен быть числом"))));
+            sendJsonResponse(ex, 400,
+                    new ErrorResponse("Ошибка валидации", List.of("Год фильма должен быть числом")));
         }
     }
 }
